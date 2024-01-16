@@ -1,3 +1,5 @@
+import * as React from "react";
+import { Variants, motion } from "framer-motion";
 import "./app.css";
 
 type Day = {
@@ -21,7 +23,7 @@ type Calendar = {
 type Calendars = Array<Calendar>;
 
 const generateCalendar = (year: number): Calendar => {
-	const date = new Date(year);
+	const date = new Date(year.toString());
 	const months: Array<Month> = [];
 
 	for (let i = 0; i < 12; i++) {
@@ -58,24 +60,58 @@ const narrowDays = {
 
 type ShortDays = keyof typeof narrowDays;
 
+const variants: Variants = {
+	open: {
+		transition: { staggerChildren: 0.05, delayChildren: 0.05 },
+	},
+	closed: {
+		transition: { staggerChildren: 0.05, staggerDirection: -1 },
+	},
+};
+
+const monthVariants: Variants = {
+	open: {
+		opacity: 1,
+	},
+	closed: {
+		opacity: 0,
+	},
+};
 function App() {
 	const year = new Date().getFullYear();
 	const calendar = generateCalendar(year);
 
+	const [isOpen, toggle] = React.useReducer((s) => !s, false);
+
+	React.useEffect(() => {
+		const timeoutId = setTimeout(() => {
+			toggle();
+		}, 0);
+		return () => clearTimeout(timeoutId);
+	}, []);
+
 	return (
-		<div className="grid grid-cols-[repeat(auto-fill,_minmax(180px,_1fr))]">
+		<motion.div
+			className="grid grid-cols-[repeat(auto-fill,_minmax(180px,_1fr))]"
+			initial={false}
+			variants={variants}
+			animate={isOpen ? "open" : "closed"}
+		>
 			{calendar.months.map((month) => (
 				<>
-					<div
+					<motion.div
 						className="p-2 bg-slate-950 text-slate-50 col-span-2 flex items-center justify-center"
-						key={month.name}
+						variants={monthVariants}
+						key={year + month.name}
 					>
 						<h3 className="text-7xl font-bold">{month.name}</h3>
-					</div>
+					</motion.div>
 					{month.days.map((day) => (
-						<div
-							className="h-fit border border-slate-950 border-collapse"
+						<motion.div
+							className="h-fit border border-slate-950 border-collapse bg-white"
 							key={year + month.name + day.name.short + day.date}
+							variants={monthVariants}
+							whileHover={{ scale: 1.1, zIndex: 10 }}
 						>
 							<div className="flex border-b border-b-slate-950 max-w-full">
 								<label className="inline-flex flex-col pl-2">
@@ -94,13 +130,12 @@ function App() {
 							</div>
 							<div className="tabular-nums font-mono font-bold text-8xl text-center">
 								{day.date}
-								<small>.</small>
 							</div>
-						</div>
+						</motion.div>
 					))}
 				</>
 			))}
-		</div>
+		</motion.div>
 	);
 }
 
